@@ -99,14 +99,6 @@ This shows all successfully delivered notifications.
 
 ---
 
-## 📋 API Reference
-
-    # Copy the output and paste it as FIREBASE_SERVICE_ACCOUNT_JSON value
-
-    # Option B: Manually format it as a single line
-    # Replace newlines with \n and escape quotes
-    ```
-
 4. **Start all services:**
 
     ```bash
@@ -125,7 +117,7 @@ This shows all successfully delivered notifications.
     - RabbitMQ Management: http://localhost:15672 (guest/guest)
     - MySQL: localhost:3306
 
-### Option 2: Local Development Setup
+### Local Development Setup
 
 1. **Install dependencies:**
 
@@ -494,30 +486,7 @@ curl http://localhost:3000/api/jobs/test-msg-001
 - If using web, check browser notifications
 - Check Firebase Console > Cloud Messaging for delivery stats
 
-### Testing Checklist
-
-- [ ] Dependencies running (MySQL, RabbitMQ)
-- [ ] Application started successfully
-- [ ] Health check returns status "ok"
-- [ ] Firebase credentials loaded correctly
-- [ ] Published test message to queue
-- [ ] Message consumed from queue (check logs)
-- [ ] Notification sent via FCM (check logs)
-- [ ] Job saved to database
-- [ ] Result published to topic (check subscriber)
-- [ ] Notification received on device/browser
-
-### Additional Testing Scenarios
-
-#### Alternative Ways to Get Device Token
-
-You need a valid FCM device token. You can get one by:
-
-- Creating a test mobile app with FCM
-- Using the web FCM SDK in a test webpage
-- Using your VAPID key from Firebase Console
-
-#### 2. Publish Test Messages (Alternative Methods)
+#### Publish Test Messages (Alternative Methods)
 
 **Using the test script:**
 
@@ -573,7 +542,7 @@ async function send() {
 send();
 ```
 
-#### 3. Subscribe to Results
+#### Subscribe to Results
 
 **Using the test script:**
 
@@ -583,7 +552,7 @@ node scripts/test-subscriber.js
 
 This will listen for messages published to the `notification.done` topic.
 
-#### 4. Monitor Logs
+#### Monitor Logs
 
 ```bash
 # Docker
@@ -593,7 +562,7 @@ docker-compose logs -f app
 tail -f logs/combined.log
 ```
 
-#### 5. Verify in Database
+#### Verify in Database
 
 ```bash
 # Docker
@@ -713,7 +682,8 @@ Ensure all required environment variables are set:
 4. Use secrets management (e.g., Docker Secrets, Kubernetes Secrets)
 5. Enable Firebase App Check for additional security
 6. Monitor rate limits and adjust as needed
-   📦 Configuration
+
+📦 Configuration
 
 Environment variables in `.env`:
 
@@ -745,13 +715,13 @@ docker-compose logs -f app
 
 ### Security Checklist
 
-- [ ] Change default MySQL password
-- [ ] Create RabbitMQ user (don't use guest)
-- [ ] Use environment variables for secrets (not committed files)
-- [ ] Enable HTTPS with reverse proxy
-- [ ] Restrict network access to MySQL/RabbitMQ
-- [ ] Set up monitoring and alerts
-- [ ] Regular backups of MySQL database
+- Change default MySQL password
+- Create RabbitMQ user (don't use guest)
+- Use environment variables for secrets (not committed files)
+- Enable HTTPS with reverse proxy
+- Restrict network access to MySQL/RabbitMQ
+- Set up monitoring and alerts
+- Regular backups of MySQL database
 
 ---
 
@@ -774,9 +744,3 @@ docker-compose logs -f app
     ├── controllers/  # Business logic
     └── types/        # TypeScript types
     ```
-
----
-
-## License
-
-MIT
