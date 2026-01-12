@@ -13,12 +13,14 @@ const consoleFormat = winston.format.combine(
     winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     winston.format.printf(({ timestamp, level, message, ...meta }) => {
         let metaStr = '';
-        if (Object.keys(meta).length > 0 && meta.stack) {
-            metaStr = `\n${meta.stack}`;
-        } else if (Object.keys(meta).length > 0) {
-            metaStr = ` ${JSON.stringify(meta)}`;
+        if (Object.keys(meta).length > 0) {
+            if (typeof meta.stack === 'string') {
+                metaStr = `\n${meta.stack}`;
+            } else {
+                metaStr = ` ${JSON.stringify(meta)}`;
+            }
         }
-        return `${timestamp} [${level}]: ${message}${metaStr}`;
+        return `${String(timestamp)} [${String(level)}]: ${String(message)}${metaStr}`;
     })
 );
 
@@ -32,7 +34,7 @@ export const logger = winston.createLogger({
         new winston.transports.File({
             filename: 'logs/error.log',
             level: 'error',
-            maxsize: 5242880, // 5MB
+            maxsize: 5242880,
             maxFiles: 5,
         }),
         new winston.transports.File({

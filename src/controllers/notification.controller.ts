@@ -5,7 +5,7 @@ import { FcmJobModel } from '../models/FcmJob';
 import { logger } from '../config/logger';
 
 export class NotificationController {
-    async processMessage(messageData: any, ack: () => void, nack: () => void): Promise<void> {
+    async processMessage(messageData: unknown, ack: () => void, nack: () => void): Promise<void> {
         try {
             if (!validateFcmMessage(messageData)) {
                 logger.warn('Invalid message format, rejecting', { messageData });
@@ -32,7 +32,7 @@ export class NotificationController {
 
             await firebaseService.sendNotification(message.deviceId, title, body);
 
-            const deliverAt = new Date().toISOString();
+            const deliverAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
             await FcmJobModel.create({
                 identifier: message.identifier,
@@ -44,7 +44,7 @@ export class NotificationController {
                 deliverAt,
             };
 
-            await rabbitmqService.publish(result);
+            rabbitmqService.publish(result);
 
             logger.info('FCM notification processed successfully', {
                 identifier: message.identifier,

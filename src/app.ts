@@ -68,7 +68,10 @@ export function createApp(): express.Application {
 
     app.get('/api/jobs/:identifier', async (req: Request, res: Response) => {
         try {
-            const job = await FcmJobModel.findByIdentifier(req.params.identifier);
+            const identifier = Array.isArray(req.params.identifier)
+                ? req.params.identifier[0]
+                : req.params.identifier;
+            const job = await FcmJobModel.findByIdentifier(identifier);
             if (!job) {
                 return res.status(404).json({
                     success: false,
@@ -95,7 +98,7 @@ export function createApp(): express.Application {
         });
     });
 
-    app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+    app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
         logger.error('Unhandled error', { error: err });
         res.status(500).json({
             success: false,

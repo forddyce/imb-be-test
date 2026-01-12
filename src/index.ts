@@ -19,7 +19,7 @@ async function bootstrap(): Promise<void> {
         await FcmJobModel.createTable();
 
         logger.info('Initializing Firebase...');
-        await firebaseService.initialize();
+        firebaseService.initialize();
 
         logger.info('Connecting to RabbitMQ...');
         await rabbitmqService.connect();
@@ -36,21 +36,23 @@ async function bootstrap(): Promise<void> {
             logger.info('Service is ready to process notifications');
         });
 
-        const shutdown = async (signal: string) => {
+        const shutdown = (signal: string) => {
             logger.info(`${signal} received, shutting down gracefully...`);
 
-            server.close(async () => {
+            server.close(() => {
                 logger.info('HTTP server closed');
 
-                try {
-                    await rabbitmqService.close();
-                    await closeDatabase();
-                    logger.info('All connections closed');
-                    process.exit(0);
-                } catch (error) {
-                    logger.error('Error during shutdown', { error });
-                    process.exit(1);
-                }
+                void (async () => {
+                    try {
+                        await rabbitmqService.close();
+                        await closeDatabase();
+                        logger.info('All connections closed');
+                        process.exit(0);
+                    } catch (error) {
+                        logger.error('Error during shutdown', { error });
+                        process.exit(1);
+                    }
+                })();
             });
 
             setTimeout(() => {
@@ -59,8 +61,12 @@ async function bootstrap(): Promise<void> {
             }, 10000);
         };
 
-        process.on('SIGTERM', () => shutdown('SIGTERM'));
-        process.on('SIGINT', () => shutdown('SIGINT'));
+        process.on('SIGTERM', () => {
+            shutdown('SIGTERM');
+        });
+        process.on('SIGINT', () => {
+            shutdown('SIGINT');
+        });
     } catch (error) {
         logger.error('Failed to start application', { error });
         process.exit(1);
@@ -76,4 +82,4 @@ process.on('uncaughtException', (error) => {
     process.exit(1);
 });
 
-bootstrap();
+void bootstrap();

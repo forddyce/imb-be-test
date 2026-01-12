@@ -10,13 +10,15 @@ export interface NotificationResult {
     deliverAt: string;
 }
 
-export function validateFcmMessage(data: any): data is FcmMessage {
+export function validateFcmMessage(data: unknown): data is FcmMessage {
+    if (typeof data !== 'object' || data === null) {
+        return false;
+    }
+    const obj = data as Record<string, unknown>;
     return (
-        typeof data === 'object' &&
-        data !== null &&
-        typeof data.identifier === 'string' &&
-        typeof data.type === 'string' &&
-        typeof data.deviceId === 'string' &&
-        typeof data.text === 'string'
+        typeof obj.identifier === 'string' &&
+        typeof obj.type === 'string' &&
+        typeof obj.deviceId === 'string' &&
+        typeof obj.text === 'string'
     );
 }

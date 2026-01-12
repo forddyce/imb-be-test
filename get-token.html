@@ -1,0 +1,193 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>FCM Token Generator</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 800px;
+                margin: 50px auto;
+                padding: 20px;
+                background: #f5f5f5;
+            }
+            .container {
+                background: white;
+                padding: 30px;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            h1 {
+                color: #333;
+            }
+            button {
+                background: #4285f4;
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                font-size: 16px;
+                border-radius: 4px;
+                cursor: pointer;
+                margin: 10px 0;
+            }
+            button:hover {
+                background: #357ae8;
+            }
+            button:disabled {
+                background: #ccc;
+                cursor: not-allowed;
+            }
+            .token-container {
+                margin-top: 20px;
+                padding: 15px;
+                background: #f8f9fa;
+                border-radius: 4px;
+                word-break: break-all;
+            }
+            .success {
+                color: #0f9d58;
+                font-weight: bold;
+            }
+            .error {
+                color: #db4437;
+                font-weight: bold;
+            }
+            .instructions {
+                background: #e8f0fe;
+                padding: 15px;
+                border-radius: 4px;
+                margin: 20px 0;
+            }
+            .instructions ol {
+                margin: 10px 0;
+                padding-left: 20px;
+            }
+            code {
+                background: #f1f3f4;
+                padding: 2px 6px;
+                border-radius: 3px;
+                font-family: monospace;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🔥 FCM Device Token Generator</h1>
+
+            <div class="instructions">
+                <h3>Instructions:</h3>
+                <ol>
+                    <li>Click the button below to request notification permission</li>
+                    <li>Allow notifications when prompted by your browser</li>
+                    <li>Your device token will appear below</li>
+                    <li>Copy the token and use it in your test messages</li>
+                </ol>
+                <p>
+                    <strong>Note:</strong> This page must be served over HTTPS or localhost. You can
+                    use: <code>python3 -m http.server 8080</code> or <code>npx serve .</code>
+                </p>
+            </div>
+
+            <button id="requestPermission">🔔 Request Notification Permission</button>
+            <button id="copyToken" style="display: none">📋 Copy Token</button>
+
+            <div id="status" style="margin-top: 20px"></div>
+            <div id="tokenDisplay" class="token-container" style="display: none">
+                <strong>Your Device Token:</strong>
+                <p id="token"></p>
+            </div>
+        </div>
+
+        <script type="module">
+            import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+            import {
+                getMessaging,
+                getToken,
+            } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js';
+
+            const firebaseConfig = {
+                apiKey: 'AIzaSyDTImCyuxrnbIYyL7EdHDRO3VYeH-6-Z54',
+                authDomain: 'my--projects-cc848.firebaseapp.com',
+                projectId: 'my--projects-cc848',
+                storageBucket: 'my--projects-cc848.firebasestorage.app',
+                messagingSenderId: '373404275976',
+                appId: '1:373404275976:web:6ffdc687213eea6fb8c8bd',
+            };
+
+            const vapidKey =
+                'BAdL9mPstBTS2WDU57N6ghcuKQfdLpi6e6gQAR4Tr7NW9zDLcmkd_CUOS3uM9Kh343fGXFYbrb4XXS2c3_cot14';
+
+            let deviceToken = '';
+
+            const app = initializeApp(firebaseConfig);
+            const messaging = getMessaging(app);
+
+            const statusDiv = document.getElementById('status');
+            const tokenDiv = document.getElementById('tokenDisplay');
+            const tokenText = document.getElementById('token');
+            const copyButton = document.getElementById('copyToken');
+
+            function showStatus(message, isError = false) {
+                statusDiv.innerHTML = `<p class="${isError ? 'error' : 'success'}">${message}</p>`;
+            }
+
+            function showToken(token) {
+                deviceToken = token;
+                tokenText.textContent = token;
+                tokenDiv.style.display = 'block';
+                copyButton.style.display = 'inline-block';
+                console.log('FCM Token:', token);
+            }
+
+            document.getElementById('requestPermission').addEventListener('click', async () => {
+                try {
+                    showStatus('Requesting permission...', false);
+
+                    const permission = await Notification.requestPermission();
+
+                    if (permission === 'granted') {
+                        showStatus('Permission granted! Getting token...', false);
+
+                        const token = await getToken(messaging, {
+                            vapidKey: vapidKey,
+                        });
+
+                        if (token) {
+                            showStatus('✅ Token generated successfully!', false);
+                            showToken(token);
+                        } else {
+                            showStatus(
+                                '❌ No registration token available. Make sure you have granted notification permission.',
+                                true
+                            );
+                        }
+                    } else {
+                        showStatus(
+                            '❌ Notification permission denied. Please allow notifications and try again.',
+                            true
+                        );
+                    }
+                } catch (err) {
+                    console.error('Error getting token:', err);
+                    showStatus(`❌ Error: ${err.message}`, true);
+                }
+            });
+
+            copyButton.addEventListener('click', () => {
+                navigator.clipboard
+                    .writeText(deviceToken)
+                    .then(() => {
+                        showStatus('✅ Token copied to clipboard!', false);
+                        setTimeout(() => {
+                            showStatus('Token ready to use', false);
+                        }, 2000);
+                    })
+                    .catch((err) => {
+                        showStatus('❌ Failed to copy token', true);
+                        console.error('Copy failed:', err);
+                    });
+            });
+        </script>
+    </body>
+</html>

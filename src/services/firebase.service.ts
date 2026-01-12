@@ -6,7 +6,7 @@ import fs from 'fs';
 export class FirebaseService {
     private app: admin.app.App | null = null;
 
-    async initialize(): Promise<void> {
+    initialize(): void {
         try {
             let serviceAccount: admin.ServiceAccount;
 
@@ -14,9 +14,12 @@ export class FirebaseService {
                 config.firebase.serviceAccountPath &&
                 fs.existsSync(config.firebase.serviceAccountPath)
             ) {
-                serviceAccount = require(config.firebase.serviceAccountPath);
+                const fileContent = fs.readFileSync(config.firebase.serviceAccountPath, 'utf-8');
+                serviceAccount = JSON.parse(fileContent) as admin.ServiceAccount;
             } else if (config.firebase.serviceAccountJson) {
-                serviceAccount = JSON.parse(config.firebase.serviceAccountJson);
+                serviceAccount = JSON.parse(
+                    config.firebase.serviceAccountJson
+                ) as admin.ServiceAccount;
             } else {
                 throw new Error('Firebase service account not configured');
             }

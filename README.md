@@ -2,151 +2,176 @@
 
 A Firebase Cloud Messaging (FCM) notification service with RabbitMQ integration. This service consumes messages from a RabbitMQ queue, sends notifications via FCM, stores delivery records in MySQL, and publishes results to a RabbitMQ topic.
 
-## Features
+## 🚀 Quick Start (5 Minutes)
 
-- 📨 Consumes messages from RabbitMQ queue (`notification.fcm`)
-- 🔥 Sends push notifications via Firebase Cloud Messaging
-- 💾 Stores delivery records in MySQL database
-- 📢 Publishes results to RabbitMQ topic (`notification.done`)
-- 🔒 Security features (Helmet, CORS, rate limiting)
-- 🐳 Fully Dockerized setup
-- 📊 Health check endpoint
-- 📝 Comprehensive logging
-
-## Architecture
-
-```
-RabbitMQ Queue (notification.fcm)
-    ↓
-  Service consumes & validates message
-    ↓
-  Firebase Cloud Messaging
-    ↓
-  MySQL Database (fcm_job table)
-    ↓
-RabbitMQ Topic (notification.done)
-```
-
-## Prerequisites
-
-### For Local Development
+### Prerequisites
 
 - Node.js 18+ and npm
-- MySQL 8.0+
-- RabbitMQ 3.12+
-- Firebase project with FCM enabled
+- Docker (for MySQL and RabbitMQ)
+- Firebase account with FCM enabled
 
-### For Docker Setup
+### Step 1: Firebase Setup (⚠️ IMPORTANT - Do This First)
 
-- Docker
-- Docker Compose
-
-## Firebase Setup
+**You MUST create your own Firebase service account credentials:**
 
 1. Go to [Firebase Console](https://console.firebase.google.com/)
 2. Create a new project or select existing project
-3. Enable Firebase Cloud Messaging
-4. Generate a service account key:
-   - Go to Project Settings → Service Accounts
-   - Click "Generate New Private Key"
-   - Save the JSON file as `firebase-service-account.json` in the project root
+3. Enable Cloud Messaging: Project Settings → Cloud Messaging
+4. **Generate service account key:**
+    - Go to Project Settings → Service Accounts
+    - Click "Generate New Private Key"
+    - **IMPORTANT:** Save the JSON file as `firebase-service-account.json` in the project root
+    - **⚠️ SECURITY:** Never commit this file to Git or share it publicly!
 
-## Installation & Setup
+### Step 2: Install Dependencies
 
-### Option 1: Docker Setup (Recommended)
+```bash
+npm install
+```
 
-1. **Clone and navigate to project:**
+### Step 3: Start Dependencies (MySQL & RabbitMQ)
 
-   ```bash
-   cd /home/forddyce/web/test
-   ```
+```bash
+# One command to start all services
+docker-compose up -d
 
-2. **Create environment file:**
+# Wait 10-15 seconds for services to initialize
+sleep 15
 
-   ```bash
-   cp .env.docker .env
-   ```
+# Verify services are running
+docker-compose ps
+```
 
-3. **Edit `.env` and add your Firebase credentials:**
+**Useful Docker Commands:**
 
-   You need to convert your Firebase service account JSON to a single-line string:
+- **Restart services:** `docker-compose restart`
+- **Stop services:** `docker-compose down`
+- **View logs:** `docker-compose logs -f`
 
-   ```bash
-   # Option A: Use the service account JSON file
-   cat firebase-service-account.json | jq -c .
-   # Copy the output and paste it as FIREBASE_SERVICE_ACCOUNT_JSON value
+### Step 4: Configure Environment
 
-   # Option B: Manually format it as a single line
-   # Replace newlines with \n and escape quotes
-   ```
+The🧪 Testing the Service
+
+### Get a Device Token
+
+You need a valid FCM device token to receive notifications:
+
+1. **Start the token generator:**
+
+    ```bash
+    # In a new terminal
+    python3 -m http.server 8080
+    ```
+
+2. **Open in browser:** http://localhost:8080/get-token.html
+
+3. **Click "Request Notification Permission"** and allow notifications
+
+4. **Copy the token** that appears
+
+### Send a Test Notification
+
+1. **Edit the test script:**
+
+    ```bash
+    nano scripts/test-publisher.js
+    ```
+
+    Replace `YOUR_DEVICE_TOKEN_HERE` with your actual token
+
+2. **Send the message:**
+
+    ```bash
+    node scripts/test-publisher.js
+    ```
+
+3. **Check the notification** appears in your browser!
+
+### Monitor Results
+
+In a new terminal, run:
+
+```bash
+node scripts/test-subscriber.js
+```
+
+This shows all successfully delivered notifications.
+
+---
+
+## 📋 API Reference
+
+    # Copy the output and paste it as FIREBASE_SERVICE_ACCOUNT_JSON value
+
+    # Option B: Manually format it as a single line
+    # Replace newlines with \n and escape quotes
+    ```
 
 4. **Start all services:**
 
-   ```bash
-   docker-compose up -d
-   ```
+    ```bash
+    docker-compose up -d
+    ```
 
 5. **Check service status:**
 
-   ```bash
-   docker-compose ps
-   docker-compose logs -f app
-   ```
+    ```bash
+    docker-compose ps
+    docker-compose logs -f app
+    ```
 
 6. **Access services:**
-   - Application: http://localhost:3000/health
-   - RabbitMQ Management: http://localhost:15672 (guest/guest)
-   - MySQL: localhost:3306
+    - Application: http://localhost:3000/health
+    - RabbitMQ Management: http://localhost:15672 (guest/guest)
+    - MySQL: localhost:3306
 
 ### Option 2: Local Development Setup
 
 1. **Install dependencies:**
 
-   ```bash
-   npm install
-   ```
+    ```bash
+    npm install
+    ```
 
 2. **Set up MySQL:**
 
-   ```bash
-   # Create database
-   mysql -u root -p
-   CREATE DATABASE fcm_notifications;
-   ```
+    ```bash
+    # Create database
+    mysql -u root -p
+    CREATE DATABASE fcm_notifications;
+    ```
 
 3. **Set up RabbitMQ:**
 
-   ```bash
-   # Using Docker
-   docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3.12-management-alpine
-   ```
+    ```bash
+    # Using Docker
+    docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3.12-management-alpine
+    ```
 
 4. **Configure environment:**
 
-   ```bash
-   cp .env.example .env
-   ```
+    ```bash
+    cp .env.example .env
+    ```
 
-   Edit `.env` and set:
-
-   - `FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json`
-   - Update MySQL credentials
-   - Update RabbitMQ URL if needed
+    Edit `.env` and set:
+    - `FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json`
+    - Update MySQL credentials
+    - Update RabbitMQ URL if needed
 
 5. **Place Firebase credentials:**
-
-   - Put your `firebase-service-account.json` in the project root
+    - Put your `firebase-service-account.json` in the project root
 
 6. **Build and run:**
 
-   ```bash
-   # Development mode with auto-reload
-   npm run dev
+    ```bash
+    # Development mode with auto-reload
+    npm run dev
 
-   # Production build
-   npm run build
-   npm start
-   ```
+    # Production build
+    npm run build
+    npm start
+    ```
 
 ## Configuration
 
@@ -154,50 +179,19 @@ All configuration is done via environment variables. See [.env.example](.env.exa
 
 ### Key Configuration Variables
 
-| Variable                        | Description                    | Default               |
-| ------------------------------- | ------------------------------ | --------------------- |
-| `PORT`                          | HTTP server port               | 3000                  |
-| `FIREBASE_PROJECT_ID`           | Firebase project ID            | -                     |
-| `FIREBASE_SERVICE_ACCOUNT_PATH` | Path to service account JSON   | -                     |
-| `FIREBASE_SERVICE_ACCOUNT_JSON` | Service account as JSON string | -                     |
-| `RABBITMQ_URL`                  | RabbitMQ connection URL        | amqp://localhost:5672 |
-| `RABBITMQ_QUEUE_NAME`           | Queue name to consume from     | notification.fcm      |
-| `RABBITMQ_TOPIC_NAME`           | Topic name to publish to       | notification.done     |
-| `DB_HOST`                       | MySQL host                     | localhost             |
-| `DB_NAME`                       | Database name                  | fcm_notifications     |
+| Variable                        | Description                    | Default |
+| ------------------------------- | ------------------------------ | ------- |
+| `PORT`                          | HTTP server port               | 3000    |
+| `FIREBASE_PROJECT_ID`           | Firebase project ID            | -       |
+| `FIREBASE_SERVICE_ACCOUNT_PATH` | Path to service account JSON   | -       |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | Service account as JSON string | -       |
 
-## Message Format
-
-### Input Message (RabbitMQ Queue)
-
-The service expects JSON messages in this format:
-
-```json
-{
-  "identifier": "fcm-msg-a1beff5ac",
-  "type": "device",
-  "deviceId": "device_token_here",
-  "text": "Notification message"
+| `📋 API Reference
+"identifier": "fcm-msg-a1beff5ac",
+"deliverAt": "2026-01-31T12:34:56Z"
 }
-```
 
-**Field Requirements:**
-
-- `identifier` (string): Unique message identifier
-- `type` (string): Message type (currently supports "device")
-- `deviceId` (string): FCM device token
-- `text` (string): Notification body text
-
-### Output Message (RabbitMQ Topic)
-
-After successful delivery, the service publishes:
-
-```json
-{
-  "identifier": "fcm-msg-a1beff5ac",
-  "deliverAt": "2026-01-31T12:34:56Z"
-}
-```
+````
 
 ## API Endpoints
 
@@ -216,7 +210,7 @@ Response:
     "firebase": true
   }
 }
-```
+````
 
 ### Get All Jobs
 
@@ -257,7 +251,265 @@ Response:
 
 ## Testing the Application
 
-### 1. Get a Test Device Token
+### Quick Start Testing
+
+#### Step 1: Start Dependencies (MySQL & RabbitMQ)
+
+Run MySQL and RabbitMQ using Docker:
+
+```bash
+docker run -d --name fcm-mysql \
+  -e MYSQL_ROOT_PASSWORD=password \
+  -e MYSQL_DATABASE=fcm_notifications \
+  -p 3306:3306 \
+  mysql:8.0
+
+docker run -d --name fcm-rabbitmq \
+  -p 5672:5672 \
+  -p 15672:15672 \
+  rabbitmq:3.12-management-alpine
+```
+
+**Or use Docker Compose** (starts everything including the app):
+
+```bash
+docker-compose up -d mysql rabbitmq
+# Wait 10-15 seconds for services to be ready
+```
+
+#### Step 2: Verify Dependencies are Running
+
+```bash
+# Check MySQL
+docker exec -it fcm-mysql mysqladmin ping -h localhost -u root -ppassword
+
+# Check RabbitMQ
+curl http://localhost:15672/api/health/checks/alarms -u guest:guest
+```
+
+#### Step 3: Build and Start the Application
+
+```bash
+# Build TypeScript
+npm run build
+
+# Start the service
+npm start
+
+# OR for development with hot reload:
+npm run dev
+```
+
+#### Step 4: Verify Application is Running
+
+```bash
+curl http://localhost:3000/health
+```
+
+Expected response:
+
+```json
+{
+    "status": "ok",
+    "timestamp": "2026-01-12T...",
+    "uptime": 1.234,
+    "services": {
+        "rabbitmq": true,
+        "firebase": true
+    }
+}
+```
+
+#### Step 5: Get a Test Device Token
+
+You need a valid FCM device token. Options:
+
+**Option 1: Web VAPID Token (Easiest)**
+Create a simple HTML file to get a token:
+
+```html
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>FCM Token Generator</title>
+    </head>
+    <body>
+        <h1>FCM Token Generator</h1>
+        <button id="requestPermission">Request Notification Permission</button>
+        <p id="token"></p>
+
+        <script type="module">
+            import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+            import {
+                getMessaging,
+                getToken,
+            } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js';
+
+            const firebaseConfig = {
+                apiKey: 'AIzaSyDTImCyuxrnbIYyL7EdHDRO3VYeH-6-Z54',
+                authDomain: 'my--projects-cc848.firebaseapp.com',
+                projectId: 'my--projects-cc848',
+                storageSenderId: '373404275976',
+                appId: '1:373404275976:web:6ffdc687213eea6fb8c8bd',
+            };
+
+            const app = initializeApp(firebaseConfig);
+            const messaging = getMessaging(app);
+
+            document.getElementById('requestPermission').addEventListener('click', async () => {
+                try {
+                    const token = await getToken(messaging, {
+                        vapidKey:
+                            'BAdL9mPstBTS2WDU57N6ghcuKQfdLpi6e6gQAR4Tr7NW9zDLcmkd_CUOS3uM9Kh343fGXFYbrb4XXS2c3_cot14',
+                    });
+                    console.log('Token:', token);
+                    document.getElementById('token').textContent = 'Token: ' + token;
+                } catch (err) {
+                    console.error('Error:', err);
+                }
+            });
+        </script>
+    </body>
+</html>
+```
+
+Save as `get-token.html` and open in browser (needs to be served via HTTP/HTTPS, like `python3 -m http.server 8080`).
+
+**Option 2: Use a Mobile App**
+
+- Build an Android/iOS app with FCM
+- Get the registration token from the app
+
+**Option 3: For Quick Testing (might not deliver)**
+Use a dummy token format: `test-device-token-123456` (Firebase will reject it, but you can test the flow)
+
+#### Step 6: Publish Test Message to RabbitMQ
+
+**Method 1: Using the provided test script**
+
+Edit `scripts/test-publisher.js` and replace `YOUR_DEVICE_TOKEN_HERE` with your actual device token:
+
+```javascript
+deviceId: 'YOUR_ACTUAL_DEVICE_TOKEN',
+```
+
+Then run:
+
+```bash
+node scripts/test-publisher.js
+```
+
+**Method 2: Using RabbitMQ Management UI**
+
+1. Open http://localhost:15672 (login: guest/guest)
+2. Go to "Queues" tab
+3. Click on `notification.fcm`
+4. Expand "Publish message"
+5. Set "Delivery mode" to "2 - Persistent"
+6. In "Payload" field, paste:
+
+```json
+{
+    "identifier": "test-msg-001",
+    "type": "device",
+    "deviceId": "YOUR_DEVICE_TOKEN_HERE",
+    "text": "Hello! This is a test notification from FCM service"
+}
+```
+
+7. Click "Publish message"
+
+**Method 3: Using Node.js directly**
+
+```javascript
+const amqp = require('amqplib');
+
+async function publishMessage() {
+    const conn = await amqp.connect('amqp://localhost:5672');
+    const channel = await conn.createChannel();
+    await channel.assertQueue('notification.fcm', { durable: true });
+
+    const message = {
+        identifier: `test-${Date.now()}`,
+        type: 'device',
+        deviceId: 'YOUR_DEVICE_TOKEN_HERE',
+        text: 'Test notification!',
+    };
+
+    channel.sendToQueue('notification.fcm', Buffer.from(JSON.stringify(message)), {
+        persistent: true,
+    });
+
+    console.log('Message sent!');
+    setTimeout(() => process.exit(0), 500);
+}
+
+publishMessage();
+```
+
+#### Step 7: Monitor Results
+
+**Check application logs:**
+
+```bash
+# If running with npm start
+# Logs appear in console
+
+# Check log files
+tail -f logs/combined.log
+tail -f logs/error.log
+```
+
+**Subscribe to results topic:**
+
+```bash
+node scripts/test-subscriber.js
+```
+
+This will show all messages published to `notification.done` topic after successful delivery.
+
+**Check database:**
+
+```bash
+docker exec -it fcm-mysql mysql -uroot -ppassword fcm_notifications -e "SELECT * FROM fcm_job ORDER BY createdAt DESC LIMIT 5;"
+
+# Or via MySQL client
+mysql -h localhost -u root -ppassword fcm_notifications
+SELECT * FROM fcm_job ORDER BY createdAt DESC LIMIT 10;
+```
+
+**Check via API:**
+
+```bash
+# Get all jobs
+curl http://localhost:3000/api/jobs
+
+# Get specific job
+curl http://localhost:3000/api/jobs/test-msg-001
+```
+
+#### Step 8: Verify Notification Received
+
+- If using a mobile device, check for the notification
+- If using web, check browser notifications
+- Check Firebase Console > Cloud Messaging for delivery stats
+
+### Testing Checklist
+
+- [ ] Dependencies running (MySQL, RabbitMQ)
+- [ ] Application started successfully
+- [ ] Health check returns status "ok"
+- [ ] Firebase credentials loaded correctly
+- [ ] Published test message to queue
+- [ ] Message consumed from queue (check logs)
+- [ ] Notification sent via FCM (check logs)
+- [ ] Job saved to database
+- [ ] Result published to topic (check subscriber)
+- [ ] Notification received on device/browser
+
+### Additional Testing Scenarios
+
+#### Alternative Ways to Get Device Token
 
 You need a valid FCM device token. You can get one by:
 
@@ -265,7 +517,7 @@ You need a valid FCM device token. You can get one by:
 - Using the web FCM SDK in a test webpage
 - Using your VAPID key from Firebase Console
 
-### 2. Publish Test Messages
+#### 2. Publish Test Messages (Alternative Methods)
 
 **Using the test script:**
 
@@ -283,45 +535,45 @@ node scripts/test-publisher.js
 
 ```json
 {
-  "identifier": "test-msg-123",
-  "type": "device",
-  "deviceId": "YOUR_DEVICE_TOKEN",
-  "text": "Hello from test!"
+    "identifier": "test-msg-123",
+    "type": "device",
+    "deviceId": "YOUR_DEVICE_TOKEN",
+    "text": "Hello from test!"
 }
 ```
 
 **Using Node.js script:**
 
 ```javascript
-const amqp = require("amqplib");
+const amqp = require('amqplib');
 
 async function send() {
-  const conn = await amqp.connect("amqp://localhost:5672");
-  const channel = await conn.createChannel();
-  await channel.assertQueue("notification.fcm", { durable: true });
+    const conn = await amqp.connect('amqp://localhost:5672');
+    const channel = await conn.createChannel();
+    await channel.assertQueue('notification.fcm', { durable: true });
 
-  channel.sendToQueue(
-    "notification.fcm",
-    Buffer.from(
-      JSON.stringify({
-        identifier: `test-${Date.now()}`,
-        type: "device",
-        deviceId: "YOUR_DEVICE_TOKEN",
-        text: "Test notification",
-      })
-    ),
-    { persistent: true }
-  );
+    channel.sendToQueue(
+        'notification.fcm',
+        Buffer.from(
+            JSON.stringify({
+                identifier: `test-${Date.now()}`,
+                type: 'device',
+                deviceId: 'YOUR_DEVICE_TOKEN',
+                text: 'Test notification',
+            })
+        ),
+        { persistent: true }
+    );
 
-  console.log("Message sent!");
-  await channel.close();
-  await conn.close();
+    console.log('Message sent!');
+    await channel.close();
+    await conn.close();
 }
 
 send();
 ```
 
-### 3. Subscribe to Results
+#### 3. Subscribe to Results
 
 **Using the test script:**
 
@@ -331,7 +583,7 @@ node scripts/test-subscriber.js
 
 This will listen for messages published to the `notification.done` topic.
 
-### 4. Monitor Logs
+#### 4. Monitor Logs
 
 ```bash
 # Docker
@@ -341,7 +593,7 @@ docker-compose logs -f app
 tail -f logs/combined.log
 ```
 
-### 5. Verify in Database
+#### 5. Verify in Database
 
 ```bash
 # Docker
@@ -354,52 +606,53 @@ mysql -u root -p fcm_notifications
 SELECT * FROM fcm_job ORDER BY createdAt DESC LIMIT 10;
 ```
 
-## Troubleshooting
+## 🔧 Troubleshooting
 
-### Service Won't Start
-
-Check logs for specific errors:
+### App Won't Start - Database Error
 
 ```bash
-docker-compose logs app
+# Check if MySQL is running
+docker ps | grep fcm-mysql
+
+# If not running, start it
+docker start fcm-mysql
+
+# Or create new container (if needed)
+docker run -d --name fcm-mysql -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=fcm_notifications -p 3306:3306 mysql:8.0
 ```
 
-Common issues:
+### App Won't Start - Firebase Error
 
-- Missing Firebase credentials
-- Wrong database credentials
-- RabbitMQ connection failed
+```bash
+# Verify service account file exists
+ls -la firebase-service-account.json
+
+# If missing, you need to generate it from Firebase Console
+```
 
 ### Messages Not Being Processed
 
-1. Check if RabbitMQ is running:
+```bash
+# Check if RabbitMQ is running
+docker ps | grep fcm-rabbitmq
 
-   ```bash
-   curl http://localhost:15672/api/health/checks/alarms
-   ```
+# Check logs
+docker logs fcm-rabbitmq
 
-2. Verify queue exists and has messages:
+# View RabbitMQ UI: http://localhost:15672 (guest/guest)
+```
 
-   - Open http://localhost:15672
-   - Check "notification.fcm" queue
-
-3. Check application logs for errors
-
-### Firebase Errors
-
-- **Invalid device token**: The `deviceId` must be a valid FCM registration token
-- **Permission denied**: Verify your service account has FCM permissions
-- **Project not found**: Check `FIREBASE_PROJECT_ID` matches your Firebase project
-
-### Database Connection Failed
+### Clean Up / Start Fresh
 
 ```bash
-# Test MySQL connection
-docker exec -it fcm-mysql mysqladmin ping -h localhost -u root -ppassword
+# Stop and remove containers
+docker stop fcm-mysql fcm-rabbitmq
+docker rm fcm-mysql fcm-rabbitmq
 
-# Check if database exists
-docker exec -it fcm-mysql mysql -uroot -ppassword -e "SHOW DATABASES;"
+# Restart from Step 3 in Quick Start
 ```
+
+---
 
 ## Development
 
@@ -460,25 +713,70 @@ Ensure all required environment variables are set:
 4. Use secrets management (e.g., Docker Secrets, Kubernetes Secrets)
 5. Enable Firebase App Check for additional security
 6. Monitor rate limits and adjust as needed
+   📦 Configuration
 
-### Scaling
+Environment variables in `.env`:
 
-- The application is stateless and can be horizontally scaled
-- Multiple instances can consume from the same RabbitMQ queue
-- Consider using RabbitMQ clustering for high availability
-- Use MySQL replication or managed database services
+| Variable                        | Description                  | Default               |
+| ------------------------------- | ---------------------------- | --------------------- |
+| `PORT`                          | HTTP server port             | 3000                  |
+| `FIREBASE_PROJECT_ID`           | Firebase project ID          | (your project)        |
+| `FIREBASE_SERVICE_ACCOUNT_PATH` | Path to service account JSON | ./firebase-service... |
+| `RABBITMQ_URL`                  | RabbitMQ connection URL      | amqp://localhost:5672 |
+| `DB_HOST`                       | MySQL host                   | localhost             |
+| `DB_PASSWORD`                   | MySQL password               | password              |
 
-## Monitoring
+---
 
-- Health endpoint: `GET /health`
-- Logs: Check `logs/` directory
-- RabbitMQ Management UI: http://localhost:15672
-- MySQL: Monitor slow queries and connection pool
+## 🚢 Production Deployment
+
+### Docker Compose (Recommended)
+
+```bash
+# Edit .env with production values
+nano .env
+
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f app
+```
+
+### Security Checklist
+
+- [ ] Change default MySQL password
+- [ ] Create RabbitMQ user (don't use guest)
+- [ ] Use environment variables for secrets (not committed files)
+- [ ] Enable HTTPS with reverse proxy
+- [ ] Restrict network access to MySQL/RabbitMQ
+- [ ] Set up monitoring and alerts
+- [ ] Regular backups of MySQL database
+
+---
+
+## 📚 Additional Resources
+
+- **Management UIs:**
+    - RabbitMQ: http://localhost:15672 (guest/guest)
+    - Health Check: http://localhost:3000/health
+
+- **Log Files:**
+    - Combined: `logs/combined.log`
+    - Errors only: `logs/error.log`
+
+- **Project Structure:**
+    ```
+    src/
+    ├── config/       # Configuration
+    ├── models/       # Database models
+    ├── services/     # Firebase, RabbitMQ
+    ├── controllers/  # Business logic
+    └── types/        # TypeScript types
+    ```
+
+---
 
 ## License
 
 MIT
-
-## Support
-
-For issues or questions, please check the logs and troubleshooting section above.

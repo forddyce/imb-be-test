@@ -19,7 +19,8 @@ async function publishTestMessage() {
         const testMessage = {
             identifier: `fcm-msg-${Date.now()}`,
             type: 'device',
-            deviceId: 'YOUR_DEVICE_TOKEN_HERE',
+            deviceId:
+                'fbdx9hj45OvU1bZc8ubItS:APA91bGvnlvgHIhCxi6J4NbpFP4ImzPbSirq67HAI88gA45ghPv76GrY_-_LzHo0xK95vmeeMHPhYUflzSqaCMluhuDR2Z7gIedoTsjRjN1-h8LDrdMg8GY',
             text: 'This is a test notification from the test script',
         };
 

@@ -2,6 +2,11 @@ import amqp, { Channel, Connection, ConsumeMessage } from 'amqplib';
 import { config } from '../config/env';
 import { logger } from '../config/logger';
 
+interface MessageData {
+    identifier?: string;
+    [key: string]: unknown;
+}
+
 export class RabbitMQService {
     private connection: Connection | null = null;
     private channel: Channel | null = null;
@@ -9,8 +14,24 @@ export class RabbitMQService {
 
     async connect(): Promise<void> {
         try {
-            this.connection = await amqp.connect(config.rabbitmq.url);
+            let connection: Connection;
+            try {
+                connection = await amqp.connect(config.rabbitmq.url);
+            } catch (err) {
+                const error = err instanceof Error ? err : new Error(String(err));
+                throw error;
+            }
+
+            if (!connection) {
+                throw new Error('Failed to establish connection');
+            }
+
+            this.connection = connection;
             this.channel = await this.connection.createChannel();
+
+            if (!this.channel) {
+                throw new Error('Failed to create channel');
+            }
 
             await this.channel.assertQueue(config.rabbitmq.queueName, {
                 durable: true,
@@ -23,7 +44,7 @@ export class RabbitMQService {
             this.isConnected = true;
             logger.info('RabbitMQ connected successfully');
 
-            this.connection.on('error', (err) => {
+            this.connection.on('error', (err: Error) => {
                 logger.error('RabbitMQ connection error', { error: err });
                 this.isConnected = false;
             });
@@ -31,7 +52,9 @@ export class RabbitMQService {
             this.connection.on('close', () => {
                 logger.warn('RabbitMQ connection closed');
                 this.isConnected = false;
-                setTimeout(() => this.connect(), 5000);
+                void this.connect().catch((err: unknown) => {
+                    logger.error('Failed to reconnect', { error: err });
+                });
             });
         } catch (error) {
             logger.error('Failed to connect to RabbitMQ', { error });
@@ -41,7 +64,7 @@ export class RabbitMQService {
     }
 
     async consume(
-        onMessage: (message: any, ack: () => void, nack: () => void) => Promise<void>
+        onMessage: (message: unknown, ack: () => void, nack: () => void) => Promise<void>
     ): Promise<void> {
         if (!this.channel) {
             throw new Error('Channel not initialized');
@@ -51,42 +74,44 @@ export class RabbitMQService {
 
         await this.channel.consume(
             config.rabbitmq.queueName,
-            async (msg: ConsumeMessage | null) => {
+            (msg: ConsumeMessage | null) => {
                 if (!msg) {
                     return;
                 }
 
-                try {
-                    const content = msg.content.toString();
-                    logger.debug('Received message from queue', { content });
+                void (async () => {
+                    try {
+                        const content = msg.content.toString();
+                        logger.debug('Received message from queue', { content });
 
-                    const messageData = JSON.parse(content);
+                        const messageData = JSON.parse(content) as MessageData;
 
-                    const ack = () => {
-                        if (this.channel) {
-                            this.channel.ack(msg);
-                            logger.debug('Message acknowledged', {
-                                messageId: messageData.identifier,
-                            });
-                        }
-                    };
+                        const ack = () => {
+                            if (this.channel) {
+                                this.channel.ack(msg);
+                                logger.debug('Message acknowledged', {
+                                    messageId: messageData.identifier,
+                                });
+                            }
+                        };
 
-                    const nack = () => {
+                        const nack = () => {
+                            if (this.channel) {
+                                this.channel.nack(msg, false, true);
+                                logger.warn('Message not acknowledged, requeuing', {
+                                    messageId: messageData.identifier,
+                                });
+                            }
+                        };
+
+                        await onMessage(messageData, ack, nack);
+                    } catch (error) {
+                        logger.error('Error processing message', { error });
                         if (this.channel) {
                             this.channel.nack(msg, false, true);
-                            logger.warn('Message not acknowledged, requeuing', {
-                                messageId: messageData.identifier,
-                            });
                         }
-                    };
-
-                    await onMessage(messageData, ack, nack);
-                } catch (error) {
-                    logger.error('Error processing message', { error });
-                    if (this.channel) {
-                        this.channel.nack(msg, false, true);
                     }
-                }
+                })();
             },
             { noAck: false }
         );
@@ -94,7 +119,7 @@ export class RabbitMQService {
         logger.info(`Started consuming from queue: ${config.rabbitmq.queueName}`);
     }
 
-    async publish(message: any): Promise<void> {
+    publish(message: unknown): void {
         if (!this.channel) {
             throw new Error('Channel not initialized');
         }
@@ -115,19 +140,22 @@ export class RabbitMQService {
     }
 
     async close(): Promise<void> {
-        try {
-            if (this.channel) {
+        if (this.channel) {
+            try {
                 await this.channel.close();
+            } catch (err) {
+                logger.warn('Error closing channel', { error: err });
             }
-            if (this.connection) {
-                await this.connection.close();
-            }
-            this.isConnected = false;
-            logger.info('RabbitMQ connection closed');
-        } catch (error) {
-            logger.error('Error closing RabbitMQ connection', { error });
-            throw error;
         }
+        if (this.connection) {
+            try {
+                await this.connection.close();
+            } catch (err) {
+                logger.warn('Error closing connection', { error: err });
+            }
+        }
+        this.isConnected = false;
+        logger.info('RabbitMQ connection closed');
     }
 
     getConnectionStatus(): boolean {
