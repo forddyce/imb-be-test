@@ -178,15 +178,6 @@ All configuration is done via environment variables. See [.env.example](.env.exa
 | `FIREBASE_SERVICE_ACCOUNT_PATH` | Path to service account JSON   | -       |
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | Service account as JSON string | -       |
 
-| `📋 API Reference
-"identifier": "fcm-msg-a1beff5ac",
-"deliverAt": "2026-01-31T12:34:56Z"
-}
-
-````
-
-## API Endpoints
-
 ### Health Check
 
 ```bash
@@ -202,7 +193,7 @@ Response:
     "firebase": true
   }
 }
-````
+```
 
 ### Get All Jobs
 
